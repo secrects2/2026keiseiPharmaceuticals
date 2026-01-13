@@ -116,7 +116,7 @@ export default function MembersTable({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {member.sport_coin?.balance?.toLocaleString() || 0} 點
+                      {member.sport_coin?.amount?.toLocaleString() || 0} 點
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

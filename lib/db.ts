@@ -103,17 +103,17 @@ export async function getMemberStats(communityId?: string) {
   if (communityId) {
     coinsQuery = supabase
       .from('sport_coins')
-      .select('balance, users!inner(community_id)')
+      .select('amount, users!inner(community_id)')
       .eq('users.community_id', communityId)
   } else {
     coinsQuery = supabase
       .from('sport_coins')
-      .select('balance')
+      .select('amount')
   }
 
   const { data: coins } = await coinsQuery
   const avgBalance = coins && coins.length > 0
-    ? Math.round(coins.reduce((sum, c) => sum + (c.balance || 0), 0) / coins.length)
+    ? Math.round(coins.reduce((sum, c) => sum + (Number(c.amount) || 0), 0) / coins.length)
     : 0
 
   return {
