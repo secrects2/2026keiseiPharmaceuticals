@@ -10,35 +10,45 @@ export type User = {
 export type Community = {
   id: string
   name: string
+  code: string
+  manager_id: number
   address: string | null
   phone: string | null
-  manager_name: string | null
+  email: string | null
+  status: string
+  member_count: number | null
   created_at: string
+  updated_at: string
 }
 
 export type MemberProfile = {
   id: string
   user_id: string
-  age: number | null
+  line_official_id: string | null
+  birthday: string | null
   gender: string | null
-  occupation: string | null
+  address: string | null
   interests: string | null
-  health_status: string | null
+  tags: string | null
+  notes: string | null
   created_at: string
+  updated_at: string
 }
 
 export type SportCoin = {
   id: string
   user_id: string
-  balance: number
-  total_earned: number
-  total_spent: number
+  coin_type: string
+  amount: number
+  source: string | null
+  expiry_date: string | null
+  status: string | null
   created_at: string
   updated_at: string
 }
 
 export type MemberWithDetails = User & {
-  community?: Community
-  profile?: MemberProfile
-  sport_coin?: SportCoin
+  community?: Community | null
+  profile?: MemberProfile | null
+  sport_coin?: SportCoin | null
 }
