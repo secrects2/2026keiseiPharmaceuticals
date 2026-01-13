@@ -22,10 +22,17 @@ export default async function Layout({
     .from('users')
     .select('*, community:communities(*)')
     .eq('email', user.email)
-    .single()
+    .maybeSingle() // 使用 maybeSingle() 而非 single()，避免 PGRST116 錯誤
 
-  if (error || !userData) {
+  // 如果查詢失敗（不是找不到資料，而是真的錯誤），記錄錯誤並重導向
+  if (error) {
     console.error('Failed to fetch user data:', error)
+    redirect('/login')
+  }
+
+  // 如果找不到用戶資料，也重導向
+  if (!userData) {
+    console.error('User data not found for email:', user.email)
     redirect('/login')
   }
 

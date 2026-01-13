@@ -1,39 +1,23 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { login } from './actions'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('admin@keiseipharm.com')
-  const [password, setPassword] = useState('admin')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const router = useRouter()
+  const [loading, setLoading] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
+    const formData = new FormData(e.currentTarget)
+    
     try {
-      const supabase = createClient()
-      
-      // 使用 Supabase Auth 登入
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        setError(error.message)
-        return
-      }
-
-      if (data.user) {
-        // 登入成功，重導向到管理後台
-        router.push('/admin')
-        router.refresh()
+      const result = await login(formData)
+      if (result?.error) {
+        setError(result.error)
       }
     } catch (err) {
       setError('登入失敗，請稍後再試')
@@ -55,7 +39,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error}
@@ -72,8 +56,7 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                defaultValue="admin@keiseipharm.com"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="admin@keiseipharm.com"
               />
@@ -88,8 +71,7 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                defaultValue="admin"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="••••••••"
               />
