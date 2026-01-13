@@ -99,14 +99,16 @@ export async function getMemberStats(communityId?: string) {
   const { count: activeMembers } = await activeMembersQuery
 
   // 計算平均運動幣餘額
-  let coinsQuery = supabase
-    .from('sport_coins')
-    .select('balance')
-
+  let coinsQuery
   if (communityId) {
-    coinsQuery = coinsQuery
+    coinsQuery = supabase
+      .from('sport_coins')
       .select('balance, users!inner(community_id)')
       .eq('users.community_id', communityId)
+  } else {
+    coinsQuery = supabase
+      .from('sport_coins')
+      .select('balance')
   }
 
   const { data: coins } = await coinsQuery
