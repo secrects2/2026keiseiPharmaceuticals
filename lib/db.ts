@@ -81,16 +81,19 @@ export async function getMemberStats(communityId?: string) {
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  let activeMembersQuery = supabase
-    .from('member_activities')
-    .select('user_id', { count: 'exact' })
-    .gte('activity_date', thirtyDaysAgo.toISOString())
-
+  let activeMembersQuery
   if (communityId) {
     // 需要 JOIN users 表來篩選社區
-    activeMembersQuery = activeMembersQuery
+    activeMembersQuery = supabase
+      .from('member_activities')
       .select('user_id, users!inner(community_id)', { count: 'exact' })
+      .gte('activity_date', thirtyDaysAgo.toISOString())
       .eq('users.community_id', communityId)
+  } else {
+    activeMembersQuery = supabase
+      .from('member_activities')
+      .select('user_id', { count: 'exact' })
+      .gte('activity_date', thirtyDaysAgo.toISOString())
   }
 
   const { count: activeMembers } = await activeMembersQuery
