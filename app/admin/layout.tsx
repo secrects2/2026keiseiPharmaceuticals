@@ -5,7 +5,7 @@ import AdminLayout from '@/components/layout/AdminLayout'
 export default async function Layout({
   children,
 }: {
-  children: React.Node
+  children: React.ReactNode
 }) {
   const supabase = await createClient()
 
