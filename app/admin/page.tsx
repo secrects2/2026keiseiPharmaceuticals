@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   const { data: userData } = await supabase
     .from('users')
     .select('role, community_id')
-    .eq('id', user?.id)
+    .eq('email', user?.email)
     .single()
 
   const communityId = userData?.role === 'admin' ? undefined : userData?.community_id
