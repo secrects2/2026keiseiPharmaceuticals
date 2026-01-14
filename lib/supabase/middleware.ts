@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // 路由配置
-const publicRoutes = ['/', '/login', '/test-auth']
+const publicRoutes = ['/', '/login', '/register', '/test-auth']
 const protectedRoutes = ['/admin', '/member']
 const adminOnlyRoutes = ['/admin']
 const memberOnlyRoutes = ['/member']
