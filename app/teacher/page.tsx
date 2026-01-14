@@ -307,7 +307,7 @@ export default function TeacherDashboard() {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-indigo-600">
-                      NT$ {(parseFloat(enrollment.payment_amount) * 0.7).toLocaleString()}
+                      NT$ {(parseFloat(enrollment.payment_amount.toString()) * 0.7).toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-600">您的收益</p>
                   </div>
