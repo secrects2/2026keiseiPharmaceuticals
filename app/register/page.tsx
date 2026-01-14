@@ -50,7 +50,7 @@ export default function RegisterPage() {
       const { data: result, error: funcError } = await supabase.rpc('register_user', {
         p_open_id: authData.user.id,
         p_email: email,
-        p_full_name: name,
+        p_name: name,
         p_phone: phone,
       })
 
