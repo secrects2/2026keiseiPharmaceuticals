@@ -50,6 +50,7 @@ export default function RegisterPage() {
       const { error: userError } = await supabase
         .from('users')
         .insert({
+          open_id: authData.user.id, // 使用 Supabase Auth user ID 作為 open_id
           email,
           role: 'user',
           community_id: null,
