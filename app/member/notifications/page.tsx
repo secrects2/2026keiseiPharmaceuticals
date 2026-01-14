@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 export default function NotificationsPage() {
   const [loading, setLoading] = useState(true)
   const [notifications, setNotifications] = useState<any[]>([])
+  const [userId, setUserId] = useState<number | null>(null)
 
   useEffect(() => {
     fetchNotifications()
@@ -13,43 +14,30 @@ export default function NotificationsPage() {
 
   const fetchNotifications = async () => {
     try {
-      // 模擬通知資料（未來可連接真實通知系統）
-      const mockNotifications = [
-        {
-          id: 1,
-          type: 'event',
-          title: '活動提醒',
-          message: '您報名的「健康講座」將於明天下午 2:00 開始',
-          is_read: false,
-          created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 分鐘前
-        },
-        {
-          id: 2,
-          type: 'coin',
-          title: '運動幣獲得',
-          message: '恭喜您獲得 50 運動幣！',
-          is_read: false,
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 小時前
-        },
-        {
-          id: 3,
-          type: 'redemption',
-          title: '兌換成功',
-          message: '您兌換的「蛋白粉」已處理完成，預計 3-5 個工作天送達',
-          is_read: true,
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 天前
-        },
-        {
-          id: 4,
-          type: 'system',
-          title: '系統公告',
-          message: '系統將於本週日凌晨 2:00-4:00 進行維護',
-          is_read: true,
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 天前
-        },
-      ]
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) return
 
-      setNotifications(mockNotifications)
+      // 取得 user_id
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', user.email)
+        .single()
+
+      if (!userData) return
+
+      setUserId(userData.id)
+
+      // 取得通知列表
+      const { data: notificationsData } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userData.id)
+        .order('created_at', { ascending: false })
+
+      setNotifications(notificationsData || [])
     } catch (error) {
       console.error('Failed to fetch notifications:', error)
     } finally {
@@ -58,18 +46,67 @@ export default function NotificationsPage() {
   }
 
   const handleMarkAsRead = async (id: number) => {
-    setNotifications(notifications.map(n =>
-      n.id === id ? { ...n, is_read: true } : n
-    ))
+    if (!userId) return
+
+    try {
+      const supabase = createClient()
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('user_id', userId)
+
+      if (error) throw error
+
+      setNotifications(notifications.map(n =>
+        n.id === id ? { ...n, is_read: true } : n
+      ))
+    } catch (error) {
+      console.error('Failed to mark as read:', error)
+    }
   }
 
   const handleMarkAllAsRead = async () => {
-    setNotifications(notifications.map(n => ({ ...n, is_read: true })))
+    if (!userId) return
+
+    try {
+      const supabase = createClient()
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('is_read', false)
+
+      if (error) throw error
+
+      setNotifications(notifications.map(n => ({ ...n, is_read: true })))
+    } catch (error) {
+      console.error('Failed to mark all as read:', error)
+    }
   }
 
   const handleDelete = async (id: number) => {
+    if (!userId) return
     if (!confirm('確定要刪除這則通知嗎？')) return
-    setNotifications(notifications.filter(n => n.id !== id))
+
+    try {
+      const supabase = createClient()
+
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId)
+
+      if (error) throw error
+
+      setNotifications(notifications.filter(n => n.id !== id))
+    } catch (error) {
+      console.error('Failed to delete notification:', error)
+      alert('刪除失敗，請稍後再試')
+    }
   }
 
   if (loading) {

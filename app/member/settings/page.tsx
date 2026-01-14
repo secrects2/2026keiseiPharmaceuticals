@@ -3,10 +3,12 @@
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
+import ChangePasswordModal from '@/components/ChangePasswordModal'
 
 export default function SettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
 
   const handleLogout = async () => {
     if (!confirm('確定要登出嗎？')) return
@@ -121,7 +123,7 @@ export default function SettingsPage() {
         <div className="p-6 space-y-4">
           <div>
             <button
-              onClick={() => alert('密碼修改功能將在未來版本中實現')}
+              onClick={() => setShowPasswordModal(true)}
               className="w-full md:w-auto px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
             >
               修改密碼
@@ -156,6 +158,12 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* 密碼修改 Modal */}
+      <ChangePasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </div>
   )
 }

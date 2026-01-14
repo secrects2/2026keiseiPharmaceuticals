@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import Pagination from '@/components/Pagination'
 
 export default function EventsPage() {
   const [loading, setLoading] = useState(true)
@@ -10,10 +11,13 @@ export default function EventsPage() {
   const [filter, setFilter] = useState('upcoming')
   const [userId, setUserId] = useState<number | null>(null)
   const [registeredEventIds, setRegisteredEventIds] = useState<Set<number>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const itemsPerPage = 9
 
   useEffect(() => {
     fetchEvents()
-  }, [filter])
+  }, [filter, currentPage])
 
   const fetchEvents = async () => {
     try {
@@ -56,7 +60,19 @@ export default function EventsPage() {
         query = query.lt('event_date', now)
       }
 
-      const { data: eventsData } = await query
+      // 計算總數
+      const { count } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+
+      const total = count || 0
+      setTotalPages(Math.ceil(total / itemsPerPage))
+
+      // 分頁查詢
+      const from = (currentPage - 1) * itemsPerPage
+      const to = from + itemsPerPage - 1
+
+      const { data: eventsData } = await query.range(from, to)
 
       setEvents(eventsData || [])
     } catch (error) {
@@ -234,6 +250,15 @@ export default function EventsPage() {
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <p className="text-gray-500">沒有找到符合條件的活動</p>
         </div>
+      )}
+
+      {/* 分頁 */}
+      {filteredEvents.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
     </div>
   )

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import AvatarUpload from '@/components/AvatarUpload'
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
@@ -13,6 +14,7 @@ export default function ProfilePage() {
     phone: '',
     address: '',
     line_official_id: '',
+    avatar_url: '',
   })
   const [userId, setUserId] = useState<number | null>(null)
 
@@ -53,6 +55,7 @@ export default function ProfilePage() {
           phone: profileData.phone || '',
           address: profileData.address || '',
           line_official_id: profileData.line_official_id || '',
+          avatar_url: profileData.avatar_url || '',
         })
       }
     } catch (error) {
@@ -106,6 +109,17 @@ export default function ProfilePage() {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
+        {/* 大頭照上傳 */}
+        <div className="mb-6 pb-6 border-b border-gray-200">
+          {userId && (
+            <AvatarUpload
+              currentAvatarUrl={profile.avatar_url}
+              userId={userId}
+              onUploadSuccess={(url) => setProfile({ ...profile, avatar_url: url })}
+            />
+          )}
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
