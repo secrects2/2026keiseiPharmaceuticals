@@ -1,44 +1,25 @@
 'use client'
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useTransition } from 'react'
+import { login } from './actions'
 
 export default function LoginPage() {
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
 
     const formData = new FormData(e.currentTarget)
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-
-    try {
-      const supabase = createClient()
-      
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (authError) {
-        setError(authError.message)
-        setLoading(false)
-        return
+    
+    startTransition(async () => {
+      const result = await login(formData)
+      if (result?.error) {
+        setError(result.error)
       }
-
-      if (data.user) {
-        // 登入成功，使用 window.location.href 強制刷新頁面
-        // 這樣可以確保 middleware 重新執行並讀取新的 session cookie
-        window.location.href = '/admin'
-      }
-    } catch (err: any) {
-      setError(err?.message || '登入失敗，請稍後再試')
-      setLoading(false)
-    }
+      // 如果沒有錯誤，redirect 會自動執行
+    })
   }
 
   return (
@@ -91,10 +72,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isPending}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? '登入中...' : '登入'}
+            {isPending ? '登入中...' : '登入'}
           </button>
 
           <div className="text-sm text-center text-gray-500">
