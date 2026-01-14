@@ -1,10 +1,47 @@
 'use client'
 
-import { useActionState } from 'react'
-import { login } from './actions'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState(login, { error: null })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    try {
+      const supabase = createClient()
+      
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (authError) {
+        setError(authError.message)
+        setLoading(false)
+        return
+      }
+
+      if (data.user) {
+        // 登入成功，使用客戶端跳轉
+        router.push('/admin')
+        router.refresh()
+      }
+    } catch (err: any) {
+      setError(err?.message || '登入失敗，請稍後再試')
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -18,11 +55,11 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" action={formAction}>
-          {state?.error && (
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               <p className="font-semibold">錯誤</p>
-              <p className="text-sm">{state.error}</p>
+              <p className="text-sm">{error}</p>
             </div>
           )}
 
@@ -36,9 +73,7 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 required
-                defaultValue="admin@keiseipharm.com"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="admin@keiseipharm.com"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
               />
             </div>
 
@@ -51,19 +86,17 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 required
-                defaultValue="admin"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="••••••••"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            disabled={isPending}
+            disabled={loading}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isPending ? '登入中...' : '登入'}
+            {loading ? '登入中...' : '登入'}
           </button>
 
           <div className="text-sm text-center text-gray-500">
