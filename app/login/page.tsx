@@ -82,6 +82,12 @@ export default function LoginPage() {
             <p>測試帳號：admin@keiseipharm.com</p>
             <p>測試密碼：admin</p>
           </div>
+
+          <div className="text-center">
+            <a href="/register" className="text-sm text-indigo-600 hover:text-indigo-500">
+              還沒有帳號？立即註冊
+            </a>
+          </div>
         </form>
       </div>
     </div>
