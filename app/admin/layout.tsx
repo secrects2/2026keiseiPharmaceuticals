@@ -20,28 +20,48 @@ export default async function Layout({
     redirect('/login')
   }
 
-  // 使用 email 從 users 表取得用戶詳細資訊（因為 auth.users 使用 UUID，public.users 使用 integer）
-  const { data: userData, error } = await supabase
+  // 先取得用戶資料
+  const { data: userData, error: userError } = await supabase
     .from('users')
-    .select('*, community:communities(*)')
+    .select('*')
     .eq('email', user.email)
-    .maybeSingle() // 使用 maybeSingle() 而非 single()，避免 PGRST116 錯誤
+    .maybeSingle()
 
-  console.log('[Admin Layout] User data query result:', { userData, error })
+  console.log('[Admin Layout] User data query result:', { userData, error: userError })
 
-  // 如果查詢失敗（不是找不到資料，而是真的錯誤），記錄錯誤並重導向
-  if (error) {
-    console.error('[Admin Layout] Failed to fetch user data:', error)
+  if (userError) {
+    console.error('[Admin Layout] Failed to fetch user data:', userError)
     redirect('/login')
   }
 
-  // 如果找不到用戶資料，也重導向
   if (!userData) {
     console.error('[Admin Layout] User data not found for email:', user.email)
     redirect('/login')
   }
 
-  console.log('[Admin Layout] Rendering AdminLayout with user:', userData.email)
+  // 如果有 community_id，再取得 community 資料
+  let communityData = null
+  if (userData.community_id) {
+    const { data: community, error: communityError } = await supabase
+      .from('communities')
+      .select('*')
+      .eq('id', userData.community_id)
+      .maybeSingle()
 
-  return <AdminLayout user={userData}>{children}</AdminLayout>
+    if (!communityError && community) {
+      communityData = community
+    }
+  }
+
+  console.log('[Admin Layout] Community data:', communityData)
+
+  // 組合完整的用戶資料
+  const fullUserData = {
+    ...userData,
+    community: communityData
+  }
+
+  console.log('[Admin Layout] Rendering AdminLayout with user:', fullUserData.email)
+
+  return <AdminLayout user={fullUserData}>{children}</AdminLayout>
 }
