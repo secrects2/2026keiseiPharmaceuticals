@@ -1,16 +1,96 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
 
-export default async function ConsultingPage() {
-  const supabase = await createClient()
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
-  // 取得所有顧問服務活動
-  const { data: events, error } = await supabase
-    .from('events')
-    .select('*')
-    .order('event_date', { ascending: false })
+interface Event {
+  id: number
+  event_name: string
+  description: string | null
+  event_date: string
+  location: string | null
+  max_participants: number | null
+  created_at: string
+  updated_at: string
+}
 
-  if (error) {
-    console.error('Failed to fetch events:', error)
+export default function ConsultingPage() {
+  const [events, setEvents] = useState<Event[]>([])
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [timeFilter, setTimeFilter] = useState('')
+
+  const supabase = createClient()
+
+  useEffect(() => {
+    fetchEvents()
+  }, [])
+
+  useEffect(() => {
+    filterEvents()
+  }, [events, searchTerm, timeFilter])
+
+  const fetchEvents = async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('event_date', { ascending: false })
+
+    if (error) {
+      console.error('Failed to fetch events:', error)
+    } else {
+      setEvents(data || [])
+    }
+    setLoading(false)
+  }
+
+  const filterEvents = () => {
+    let filtered = events
+
+    // 搜尋篩選
+    if (searchTerm) {
+      filtered = filtered.filter(event =>
+        event.event_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (event.location && event.location.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    }
+
+    // 時間篩選
+    if (timeFilter) {
+      const now = new Date()
+      if (timeFilter === 'upcoming') {
+        filtered = filtered.filter(event => new Date(event.event_date) > now)
+      } else if (timeFilter === 'completed') {
+        filtered = filtered.filter(event => new Date(event.event_date) < now)
+      }
+    }
+
+    setFilteredEvents(filtered)
+  }
+
+  const stats = {
+    total: events.length,
+    thisMonth: events.filter(e => {
+      const eventDate = new Date(e.event_date)
+      const now = new Date()
+      return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear()
+    }).length,
+    upcoming: events.filter(e => new Date(e.event_date) > new Date()).length,
+    completed: events.filter(e => new Date(e.event_date) < new Date()).length
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p className="text-gray-600">載入中...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -31,7 +111,7 @@ export default async function ConsultingPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">總服務數</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{events?.length || 0}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
             </div>
             <div className="text-3xl">💼</div>
           </div>
@@ -41,13 +121,7 @@ export default async function ConsultingPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">本月服務</p>
-              <p className="text-2xl font-bold text-indigo-600 mt-1">
-                {events?.filter(e => {
-                  const eventDate = new Date(e.event_date)
-                  const now = new Date()
-                  return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear()
-                }).length || 0}
-              </p>
+              <p className="text-2xl font-bold text-indigo-600 mt-1">{stats.thisMonth}</p>
             </div>
             <div className="text-3xl">📅</div>
           </div>
@@ -57,9 +131,7 @@ export default async function ConsultingPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">即將到來</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">
-                {events?.filter(e => new Date(e.event_date) > new Date()).length || 0}
-              </p>
+              <p className="text-2xl font-bold text-green-600 mt-1">{stats.upcoming}</p>
             </div>
             <div className="text-3xl">⏰</div>
           </div>
@@ -69,9 +141,7 @@ export default async function ConsultingPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">已完成</p>
-              <p className="text-2xl font-bold text-gray-600 mt-1">
-                {events?.filter(e => new Date(e.event_date) < new Date()).length || 0}
-              </p>
+              <p className="text-2xl font-bold text-gray-600 mt-1">{stats.completed}</p>
             </div>
             <div className="text-3xl">✅</div>
           </div>
@@ -87,9 +157,15 @@ export default async function ConsultingPage() {
               <input
                 type="text"
                 placeholder="搜尋活動..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
-              <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              >
                 <option value="">全部活動</option>
                 <option value="upcoming">即將到來</option>
                 <option value="completed">已完成</option>
@@ -123,8 +199,8 @@ export default async function ConsultingPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {events && events.length > 0 ? (
-                events.map((event) => {
+              {filteredEvents.length > 0 ? (
+                filteredEvents.map((event) => {
                   const eventDate = new Date(event.event_date)
                   const isUpcoming = eventDate > new Date()
                   const isPast = eventDate < new Date()
@@ -178,10 +254,14 @@ export default async function ConsultingPage() {
                   <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="text-gray-400">
                       <p className="text-4xl mb-2">💼</p>
-                      <p className="text-sm">尚無顧問服務活動</p>
-                      <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
-                        新增第一個服務活動
-                      </button>
+                      <p className="text-sm">
+                        {searchTerm || timeFilter ? '找不到符合條件的活動' : '尚無顧問服務活動'}
+                      </p>
+                      {!searchTerm && !timeFilter && (
+                        <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
+                          新增第一個服務活動
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -196,7 +276,7 @@ export default async function ConsultingPage() {
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">近期活動</h3>
           <div className="space-y-3">
-            {events && events.slice(0, 5).map((event) => (
+            {events.slice(0, 5).map((event) => (
               <div key={event.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{event.event_name}</p>
@@ -209,7 +289,7 @@ export default async function ConsultingPage() {
                 </div>
               </div>
             ))}
-            {(!events || events.length === 0) && (
+            {events.length === 0 && (
               <p className="text-sm text-gray-500 text-center py-4">暫無活動</p>
             )}
           </div>
@@ -224,7 +304,7 @@ export default async function ConsultingPage() {
                 <span className="text-sm font-medium text-gray-900">運動諮詢</span>
               </div>
               <span className="text-sm font-bold text-blue-600">
-                {events?.filter(e => e.event_name.includes('運動')).length || 0}
+                {events.filter(e => e.event_name.includes('運動')).length}
               </span>
             </div>
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
@@ -233,7 +313,7 @@ export default async function ConsultingPage() {
                 <span className="text-sm font-medium text-gray-900">營養諮詢</span>
               </div>
               <span className="text-sm font-bold text-green-600">
-                {events?.filter(e => e.event_name.includes('營養')).length || 0}
+                {events.filter(e => e.event_name.includes('營養')).length}
               </span>
             </div>
             <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
@@ -242,7 +322,7 @@ export default async function ConsultingPage() {
                 <span className="text-sm font-medium text-gray-900">健康講座</span>
               </div>
               <span className="text-sm font-bold text-purple-600">
-                {events?.filter(e => e.event_name.includes('講座')).length || 0}
+                {events.filter(e => e.event_name.includes('講座')).length}
               </span>
             </div>
           </div>

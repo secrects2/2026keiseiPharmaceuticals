@@ -1,16 +1,93 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
 
-export default async function ProductsPage() {
-  const supabase = await createClient()
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
-  // 取得所有產品
-  const { data: products, error } = await supabase
-    .from('sports_products')
-    .select('*')
-    .order('created_at', { ascending: false })
+interface Product {
+  id: number
+  product_name: string
+  product_code: string
+  category: string | null
+  brand: string | null
+  specification: string | null
+  unit_price: number
+  cost_price: number
+  unit: string | null
+  description: string | null
+  image_url: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
 
-  if (error) {
-    console.error('Failed to fetch products:', error)
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [categoryFilter, setCategory Filter] = useState('')
+
+  const supabase = createClient()
+
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  useEffect(() => {
+    filterProducts()
+  }, [products, searchTerm, categoryFilter])
+
+  const fetchProducts = async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('sports_products')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Failed to fetch products:', error)
+    } else {
+      setProducts(data || [])
+    }
+    setLoading(false)
+  }
+
+  const filterProducts = () => {
+    let filtered = products
+
+    // 搜尋篩選
+    if (searchTerm) {
+      filtered = filtered.filter(product =>
+        product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    }
+
+    // 分類篩選
+    if (categoryFilter) {
+      filtered = filtered.filter(product => product.category === categoryFilter)
+    }
+
+    setFilteredProducts(filtered)
+  }
+
+  const stats = {
+    total: products.length,
+    active: products.filter(p => p.is_active).length,
+    inactive: products.filter(p => !p.is_active).length,
+    totalValue: products.reduce((sum, p) => sum + (Number(p.unit_price) || 0), 0)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p className="text-gray-600">載入中...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -31,7 +108,7 @@ export default async function ProductsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">總產品數</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{products?.length || 0}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
             </div>
             <div className="text-3xl">📦</div>
           </div>
@@ -41,9 +118,7 @@ export default async function ProductsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">上架中</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">
-                {products?.filter(p => p.is_active).length || 0}
-              </p>
+              <p className="text-2xl font-bold text-green-600 mt-1">{stats.active}</p>
             </div>
             <div className="text-3xl">✅</div>
           </div>
@@ -53,9 +128,7 @@ export default async function ProductsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">已下架</p>
-              <p className="text-2xl font-bold text-gray-600 mt-1">
-                {products?.filter(p => !p.is_active).length || 0}
-              </p>
+              <p className="text-2xl font-bold text-gray-600 mt-1">{stats.inactive}</p>
             </div>
             <div className="text-3xl">⏸️</div>
           </div>
@@ -66,7 +139,7 @@ export default async function ProductsPage() {
             <div>
               <p className="text-sm text-gray-600">總價值</p>
               <p className="text-2xl font-bold text-indigo-600 mt-1">
-                ${products?.reduce((sum, p) => sum + (Number(p.unit_price) || 0), 0).toLocaleString()}
+                ${stats.totalValue.toLocaleString()}
               </p>
             </div>
             <div className="text-3xl">💰</div>
@@ -83,9 +156,15 @@ export default async function ProductsPage() {
               <input
                 type="text"
                 placeholder="搜尋產品..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
-              <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              >
                 <option value="">全部分類</option>
                 <option value="supplement">營養補充品</option>
                 <option value="equipment">運動器材</option>
@@ -123,8 +202,8 @@ export default async function ProductsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {products && products.length > 0 ? (
-                products.map((product) => (
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
@@ -177,10 +256,14 @@ export default async function ProductsPage() {
                   <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="text-gray-400">
                       <p className="text-4xl mb-2">📦</p>
-                      <p className="text-sm">尚無產品資料</p>
-                      <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
-                        新增第一個產品
-                      </button>
+                      <p className="text-sm">
+                        {searchTerm || categoryFilter ? '找不到符合條件的產品' : '尚無產品資料'}
+                      </p>
+                      {!searchTerm && !categoryFilter && (
+                        <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
+                          新增第一個產品
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

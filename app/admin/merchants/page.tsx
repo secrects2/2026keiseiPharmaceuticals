@@ -1,16 +1,75 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
 
-export default async function MerchantsPage() {
-  const supabase = await createClient()
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
-  // 取得所有合作商家
-  const { data: merchants, error } = await supabase
-    .from('partner_merchants')
-    .select('*')
-    .order('created_at', { ascending: false })
+interface Merchant {
+  id: number
+  merchant_name: string
+  merchant_code: string
+  contact_person: string | null
+  contact_phone: string | null
+  contact_email: string | null
+  address: string | null
+  business_type: string | null
+  partnership_start_date: string | null
+  status: string
+  commission_rate: number
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
 
-  if (error) {
-    console.error('Failed to fetch merchants:', error)
+export default function MerchantsPage() {
+  const [merchants, setMerchants] = useState<Merchant[]>([])
+  const [filteredMerchants, setFilteredMerchants] = useState<Merchant[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+
+  const supabase = createClient()
+
+  useEffect(() => {
+    fetchMerchants()
+  }, [])
+
+  useEffect(() => {
+    filterMerchants()
+  }, [merchants, searchTerm, statusFilter])
+
+  const fetchMerchants = async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('partner_merchants')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Failed to fetch merchants:', error)
+    } else {
+      setMerchants(data || [])
+    }
+    setLoading(false)
+  }
+
+  const filterMerchants = () => {
+    let filtered = merchants
+
+    // 搜尋篩選
+    if (searchTerm) {
+      filtered = filtered.filter(merchant =>
+        merchant.merchant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        merchant.merchant_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (merchant.contact_person && merchant.contact_person.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    }
+
+    // 狀態篩選
+    if (statusFilter) {
+      filtered = filtered.filter(merchant => merchant.status === statusFilter)
+    }
+
+    setFilteredMerchants(filtered)
   }
 
   const getStatusBadge = (status: string) => {
@@ -20,6 +79,26 @@ export default async function MerchantsPage() {
       inactive: { label: '已終止', className: 'bg-gray-100 text-gray-800' },
     }
     return statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-800' }
+  }
+
+  const stats = {
+    total: merchants.length,
+    active: merchants.filter(m => m.status === 'active').length,
+    pending: merchants.filter(m => m.status === 'pending').length,
+    avgCommission: merchants.length > 0
+      ? merchants.reduce((sum, m) => sum + (Number(m.commission_rate) || 0), 0) / merchants.length
+      : 0
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p className="text-gray-600">載入中...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -40,7 +119,7 @@ export default async function MerchantsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">總合作夥伴</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{merchants?.length || 0}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
             </div>
             <div className="text-3xl">🤝</div>
           </div>
@@ -50,9 +129,7 @@ export default async function MerchantsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">合作中</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">
-                {merchants?.filter(m => m.status === 'active').length || 0}
-              </p>
+              <p className="text-2xl font-bold text-green-600 mt-1">{stats.active}</p>
             </div>
             <div className="text-3xl">✅</div>
           </div>
@@ -62,9 +139,7 @@ export default async function MerchantsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">洽談中</p>
-              <p className="text-2xl font-bold text-yellow-600 mt-1">
-                {merchants?.filter(m => m.status === 'pending').length || 0}
-              </p>
+              <p className="text-2xl font-bold text-yellow-600 mt-1">{stats.pending}</p>
             </div>
             <div className="text-3xl">💬</div>
           </div>
@@ -75,9 +150,7 @@ export default async function MerchantsPage() {
             <div>
               <p className="text-sm text-gray-600">平均佣金率</p>
               <p className="text-2xl font-bold text-indigo-600 mt-1">
-                {merchants && merchants.length > 0
-                  ? (merchants.reduce((sum, m) => sum + (Number(m.commission_rate) || 0), 0) / merchants.length).toFixed(1)
-                  : 0}%
+                {stats.avgCommission.toFixed(1)}%
               </p>
             </div>
             <div className="text-3xl">💰</div>
@@ -94,9 +167,15 @@ export default async function MerchantsPage() {
               <input
                 type="text"
                 placeholder="搜尋商家..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
-              <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              >
                 <option value="">全部狀態</option>
                 <option value="active">合作中</option>
                 <option value="pending">洽談中</option>
@@ -137,8 +216,8 @@ export default async function MerchantsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {merchants && merchants.length > 0 ? (
-                merchants.map((merchant) => {
+              {filteredMerchants.length > 0 ? (
+                filteredMerchants.map((merchant) => {
                   const statusBadge = getStatusBadge(merchant.status)
                   return (
                     <tr key={merchant.id} className="hover:bg-gray-50">
@@ -187,10 +266,14 @@ export default async function MerchantsPage() {
                   <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="text-gray-400">
                       <p className="text-4xl mb-2">🤝</p>
-                      <p className="text-sm">尚無合作夥伴資料</p>
-                      <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
-                        新增第一個合作夥伴
-                      </button>
+                      <p className="text-sm">
+                        {searchTerm || statusFilter ? '找不到符合條件的合作夥伴' : '尚無合作夥伴資料'}
+                      </p>
+                      {!searchTerm && !statusFilter && (
+                        <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
+                          新增第一個合作夥伴
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
