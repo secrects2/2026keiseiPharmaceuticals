@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import MemberLayout from '@/components/layout/MemberLayout'
 import { ToastProvider } from '@/components/Toast'
+import QueryProvider from '@/components/QueryProvider'
 
 export default async function Layout({
   children,
@@ -55,8 +56,10 @@ export default async function Layout({
   }
 
   return (
-    <ToastProvider>
-      <MemberLayout user={user}>{children}</MemberLayout>
-    </ToastProvider>
+    <QueryProvider>
+      <ToastProvider>
+        <MemberLayout user={user}>{children}</MemberLayout>
+      </ToastProvider>
+    </QueryProvider>
   )
 }

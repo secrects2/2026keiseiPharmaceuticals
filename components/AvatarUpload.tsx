@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import ImageCropper from './ImageCropper'
 
 interface AvatarUploadProps {
   currentAvatarUrl?: string | null
@@ -13,6 +14,8 @@ interface AvatarUploadProps {
 export default function AvatarUpload({ currentAvatarUrl, userId, onUploadSuccess }: AvatarUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<string | null>(currentAvatarUrl || null)
+  const [showCropper, setShowCropper] = useState(false)
+  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,26 +34,37 @@ export default function AvatarUpload({ currentAvatarUrl, userId, onUploadSuccess
       return
     }
 
+    // 顯示裁切器
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setTempImageSrc(reader.result as string)
+      setShowCropper(true)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setShowCropper(false)
+    
     // 顯示預覽
     const reader = new FileReader()
     reader.onloadend = () => {
       setPreview(reader.result as string)
     }
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(croppedBlob)
 
-    // 上傳到 Supabase Storage
-    await uploadAvatar(file)
+    // 上傳裁切後的圖片
+    await uploadAvatar(croppedBlob)
   }
 
-  const uploadAvatar = async (file: File) => {
+  const uploadAvatar = async (file: Blob) => {
     setUploading(true)
 
     try {
       const supabase = createClient()
 
       // 生成唯一檔名
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${userId}-${Date.now()}.${fileExt}`
+      const fileName = `${userId}-${Date.now()}.jpg`
       const filePath = `${fileName}`
 
       // 上傳到 Storage
@@ -134,6 +148,19 @@ export default function AvatarUpload({ currentAvatarUrl, userId, onUploadSuccess
       <p className="text-xs text-gray-500 text-center">
         支援 JPG、PNG 格式，檔案大小不超過 2MB
       </p>
+
+      {/* 圖片裁切器 */}
+      {showCropper && tempImageSrc && (
+        <ImageCropper
+          imageSrc={tempImageSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setShowCropper(false)
+            setTempImageSrc(null)
+          }}
+          aspect={1}
+        />
+      )}
     </div>
   )
 }
