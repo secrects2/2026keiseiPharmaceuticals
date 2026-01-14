@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import ProductCharts from '@/components/ProductCharts'
 
 interface Product {
   id: number
@@ -145,6 +146,17 @@ export default function ProductsPage() {
             <div className="text-3xl">💰</div>
           </div>
         </div>
+      </div>
+
+      {/* 動態圖表 */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">數據分析</h2>
+          <p className="text-sm text-gray-600">
+            {searchTerm || categoryFilter ? '顯示篩選後的數據' : '顯示全部數據'}
+          </p>
+        </div>
+        <ProductCharts products={filteredProducts} />
       </div>
 
       {/* 產品列表 */}
