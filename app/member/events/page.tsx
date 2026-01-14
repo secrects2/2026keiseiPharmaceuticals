@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Pagination from '@/components/Pagination'
+import { useToast } from '@/components/Toast'
 
 export default function EventsPage() {
+  const { showToast } = useToast()
   const [loading, setLoading] = useState(true)
   const [events, setEvents] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -100,11 +102,11 @@ export default function EventsPage() {
 
       if (error) throw error
 
-      alert('報名成功！')
+      showToast('報名成功！', 'success')
       fetchEvents()
     } catch (error) {
       console.error('Failed to register:', error)
-      alert('報名失敗，請稍後再試')
+      showToast('報名失敗，請稍後再試', 'error')
     }
   }
 
@@ -124,11 +126,11 @@ export default function EventsPage() {
 
       if (error) throw error
 
-      alert('已取消報名')
+      showToast('已取消報名', 'success')
       fetchEvents()
     } catch (error) {
       console.error('Failed to cancel:', error)
-      alert('取消失敗，請稍後再試')
+      showToast('取消失敗，請稍後再試', 'error')
     }
   }
 

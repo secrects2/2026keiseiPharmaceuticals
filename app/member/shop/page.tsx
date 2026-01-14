@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Pagination from '@/components/Pagination'
 import LazyImage from '@/components/LazyImage'
+import { useToast } from '@/components/Toast'
 
 export default function ShopPage() {
+  const { showToast } = useToast()
   const [loading, setLoading] = useState(true)
   const [products, setProducts] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -86,7 +88,7 @@ export default function ShopPage() {
 
     // 檢查餘額
     if (balance < product.price) {
-      alert('運動幣不足！')
+      showToast('運動幣不足！', 'error')
       return
     }
 
@@ -122,11 +124,11 @@ export default function ShopPage() {
 
       if (coinError) throw coinError
 
-      alert('兌換成功！')
+      showToast('兌換成功！', 'success')
       fetchProducts()
     } catch (error) {
       console.error('Failed to redeem:', error)
-      alert('兌換失敗，請稍後再試')
+      showToast('兌換失敗，請稍後再試', 'error')
     }
   }
 
