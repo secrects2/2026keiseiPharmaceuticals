@@ -17,11 +17,15 @@ export default function LoginPage() {
     try {
       const result = await login(formData)
       if (result?.error) {
-        setError(result.error)
+        // 顯示詳細的錯誤訊息
+        setError(`登入失敗：${result.error}`)
+        console.error('Login error:', result.error)
       }
-    } catch (err) {
-      setError('登入失敗，請稍後再試')
-      console.error(err)
+    } catch (err: any) {
+      // 顯示詳細的錯誤訊息
+      const errorMessage = err?.message || '登入失敗，請稍後再試'
+      setError(errorMessage)
+      console.error('Login exception:', err)
     } finally {
       setLoading(false)
     }
@@ -42,7 +46,8 @@ export default function LoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+              <p className="font-semibold">錯誤</p>
+              <p className="text-sm">{error}</p>
             </div>
           )}
 
