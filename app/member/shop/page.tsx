@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import Pagination from '@/components/Pagination'
+import LazyImage from '@/components/LazyImage'
 
 export default function ShopPage() {
   const [loading, setLoading] = useState(true)
@@ -10,10 +12,13 @@ export default function ShopPage() {
   const [category, setCategory] = useState('all')
   const [userId, setUserId] = useState<number | null>(null)
   const [balance, setBalance] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const itemsPerPage = 12
 
   useEffect(() => {
     fetchProducts()
-  }, [category])
+  }, [category, currentPage])
 
   const fetchProducts = async () => {
     try {
@@ -53,7 +58,20 @@ export default function ShopPage() {
         query = query.eq('category', category)
       }
 
-      const { data: productsData } = await query
+      // 計算總數
+      const { count } = await supabase
+        .from('sports_products')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true)
+
+      const total = count || 0
+      setTotalPages(Math.ceil(total / itemsPerPage))
+
+      // 分頁查詢
+      const from = (currentPage - 1) * itemsPerPage
+      const to = from + itemsPerPage - 1
+
+      const { data: productsData } = await query.range(from, to)
 
       setProducts(productsData || [])
     } catch (error) {
@@ -175,12 +193,17 @@ export default function ShopPage() {
 
           return (
             <div key={product.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
-              {product.image_url && (
-                <img
+              {product.image_url ? (
+                <LazyImage
                   src={product.image_url}
                   alt={product.name}
-                  className="w-full h-48 object-cover rounded-t-lg"
+                  className="w-full h-48 rounded-t-lg"
+                  placeholder="📷"
                 />
+              ) : (
+                <div className="w-full h-48 bg-gray-200 rounded-t-lg flex items-center justify-center">
+                  <span className="text-4xl">📷</span>
+                </div>
               )}
               <div className="p-6">
                 <div className="flex items-start justify-between mb-2">
@@ -231,6 +254,15 @@ export default function ShopPage() {
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <p className="text-gray-500">沒有找到符合條件的商品</p>
         </div>
+      )}
+
+      {/* 分頁 */}
+      {filteredProducts.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
     </div>
   )

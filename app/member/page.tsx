@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { SkeletonStats, SkeletonList } from '@/components/SkeletonCard'
 
 interface DashboardData {
   coinBalance: number
@@ -96,8 +97,16 @@ export default function MemberDashboard() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">載入中...</div>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">會員儀表板</h1>
+          <p className="mt-1 text-sm text-gray-600">歡迎回來！</p>
+        </div>
+        <SkeletonStats />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SkeletonList />
+          <SkeletonList />
+        </div>
       </div>
     )
   }
