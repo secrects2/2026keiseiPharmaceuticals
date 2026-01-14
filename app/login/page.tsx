@@ -1,13 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -33,9 +31,9 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // 登入成功，使用客戶端跳轉
-        router.push('/admin')
-        router.refresh()
+        // 登入成功，使用 window.location.href 強制刷新頁面
+        // 這樣可以確保 middleware 重新執行並讀取新的 session cookie
+        window.location.href = '/admin'
       }
     } catch (err: any) {
       setError(err?.message || '登入失敗，請稍後再試')
