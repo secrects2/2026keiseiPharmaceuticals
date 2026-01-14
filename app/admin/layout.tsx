@@ -13,7 +13,10 @@ export default async function Layout({
     data: { user },
   } = await supabase.auth.getUser()
 
+  console.log('[Admin Layout] Auth user:', user?.email)
+
   if (!user) {
+    console.log('[Admin Layout] No auth user, redirecting to login')
     redirect('/login')
   }
 
@@ -24,17 +27,21 @@ export default async function Layout({
     .eq('email', user.email)
     .maybeSingle() // 使用 maybeSingle() 而非 single()，避免 PGRST116 錯誤
 
+  console.log('[Admin Layout] User data query result:', { userData, error })
+
   // 如果查詢失敗（不是找不到資料，而是真的錯誤），記錄錯誤並重導向
   if (error) {
-    console.error('Failed to fetch user data:', error)
+    console.error('[Admin Layout] Failed to fetch user data:', error)
     redirect('/login')
   }
 
   // 如果找不到用戶資料，也重導向
   if (!userData) {
-    console.error('User data not found for email:', user.email)
+    console.error('[Admin Layout] User data not found for email:', user.email)
     redirect('/login')
   }
+
+  console.log('[Admin Layout] Rendering AdminLayout with user:', userData.email)
 
   return <AdminLayout user={userData}>{children}</AdminLayout>
 }
