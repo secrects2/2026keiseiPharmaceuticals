@@ -1,42 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useActionState } from 'react'
 import { login } from './actions'
 
 export default function LoginPage() {
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    const formData = new FormData(e.currentTarget)
-    
-    try {
-      const result = await login(formData)
-      // 如果有錯誤才顯示，沒有錯誤表示 redirect 成功
-      if (result?.error) {
-        setError(`登入失敗：${result.error}`)
-        console.error('Login error:', result.error)
-        setLoading(false)
-      }
-      // 如果沒有錯誤，redirect 會自動跳轉，不需要設定 loading = false
-    } catch (err: any) {
-      // 只捕獲真正的錯誤，不捕獲 NEXT_REDIRECT
-      if (err?.message !== 'NEXT_REDIRECT') {
-        const errorMessage = err?.message || '登入失敗，請稍後再試'
-        setError(errorMessage)
-        console.error('Login exception:', err)
-        setLoading(false)
-      }
-      // 如果是 NEXT_REDIRECT，讓它繼續拋出
-      else {
-        throw err
-      }
-    }
-  }
+  const [state, formAction, isPending] = useActionState(login, { error: null })
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -50,11 +18,11 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
+        <form className="mt-8 space-y-6" action={formAction}>
+          {state?.error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               <p className="font-semibold">錯誤</p>
-              <p className="text-sm">{error}</p>
+              <p className="text-sm">{state.error}</p>
             </div>
           )}
 
@@ -92,10 +60,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isPending}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? '登入中...' : '登入'}
+            {isPending ? '登入中...' : '登入'}
           </button>
 
           <div className="text-sm text-center text-gray-500">
