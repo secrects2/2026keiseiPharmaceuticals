@@ -1,9 +1,12 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { Shield, Store, GraduationCap } from 'lucide-react'
 import { login } from './actions'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
 
@@ -89,6 +92,46 @@ export default function LoginPage() {
             </a>
           </div>
         </form>
+
+        {/* 快速角色切換 */}
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <p className="text-sm text-gray-600 text-center mb-4">快速進入功能畫面</p>
+          <div className="grid grid-cols-3 gap-3">
+            {/* 管理者 */}
+            <button
+              onClick={() => router.push('/admin')}
+              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 rounded-lg border border-purple-200 transition-all hover:shadow-md group"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-gray-700">管理者</span>
+            </button>
+
+            {/* 店家（暫時導向管理者） */}
+            <button
+              onClick={() => router.push('/admin')}
+              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 rounded-lg border border-blue-200 transition-all hover:shadow-md group"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Store className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-gray-700">店家</span>
+            </button>
+
+            {/* 授課老師 */}
+            <button
+              onClick={() => router.push('/teacher')}
+              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 rounded-lg border border-amber-200 transition-all hover:shadow-md group"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                <GraduationCap className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-gray-700">授課老師</span>
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 text-center mt-3">點擊按鈕直接進入對應功能畫面（無需登入）</p>
+        </div>
       </div>
     </div>
   )

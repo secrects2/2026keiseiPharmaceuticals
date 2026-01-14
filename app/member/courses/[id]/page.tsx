@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Clock, Users, MapPin, Video, Calendar, Coins, Star, CheckCircle } from 'lucide-react'
+import ProductBundleSection from '@/components/ProductBundleSection'
 
 interface Course {
   id: number
@@ -31,6 +32,21 @@ interface Course {
   }
 }
 
+interface ProductBundle {
+  id: number
+  name: string
+  description: string
+  bundle_type: 'basic' | 'advanced' | 'premium'
+  products: Array<{
+    product_id: number
+    name: string
+    quantity: number
+  }>
+  original_price: number
+  bundle_price: number
+  discount_percentage: number
+}
+
 export default function CourseDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -40,10 +56,13 @@ export default function CourseDetailPage() {
   const [userCoins, setUserCoins] = useState({ government: 0, self: 0 })
   const [useGovernmentCoin, setUseGovernmentCoin] = useState(0)
   const [useSelfCoin, setUseSelfCoin] = useState(0)
+  const [productBundles, setProductBundles] = useState<ProductBundle[]>([])
+  const [selectedBundle, setSelectedBundle] = useState<ProductBundle | null>(null)
 
   useEffect(() => {
     fetchCourseDetail()
     fetchUserCoins()
+    fetchProductBundles()
   }, [params.id])
 
   const fetchCourseDetail = async () => {
