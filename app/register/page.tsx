@@ -46,62 +46,19 @@ export default function RegisterPage() {
         throw new Error('註冊失敗')
       }
 
-      console.log('[Register] Auth user created:', authData.user.id)
+      // 2. 呼叫 Database Function 建立用戶資料
+      const { data: result, error: funcError } = await supabase.rpc('register_user', {
+        p_open_id: authData.user.id,
+        p_email: email,
+        p_full_name: name,
+        p_phone: phone,
+      })
 
-      // 2. 建立 public.users 記錄
-      const userData = {
-        open_id: authData.user.id, // 使用 Supabase Auth user ID 作為 open_id
-        email,
-        role: 'user',
-        community_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+      if (funcError) throw funcError
+
+      if (!result.success) {
+        throw new Error(result.error || '建立用戶資料失敗')
       }
-
-      console.log('[Register] Inserting user data:', userData)
-
-      const { error: userError } = await supabase
-        .from('users')
-        .insert(userData)
-
-      if (userError) {
-        console.error('[Register] User insert error:', userError)
-        throw userError
-      }
-
-      // 3. 取得剛建立的 user_id
-      const { data: userRecord } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .single()
-
-      if (!userRecord) throw new Error('無法取得用戶 ID')
-
-      // 4. 建立 member_profiles 記錄
-      const { error: profileError } = await supabase
-        .from('member_profiles')
-        .insert({
-          user_id: userRecord.id,
-          full_name: name,
-          phone,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-
-      if (profileError) throw profileError
-
-      // 5. 建立 sport_coins 記錄（初始 100 運動幣）
-      const { error: coinError } = await supabase
-        .from('sport_coins')
-        .insert({
-          user_id: userRecord.id,
-          amount: 100,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-
-      if (coinError) throw coinError
 
       // 註冊成功，重導向到登入頁
       alert('註冊成功！請登入')
