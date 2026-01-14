@@ -16,18 +16,25 @@ export default function LoginPage() {
     
     try {
       const result = await login(formData)
+      // 如果有錯誤才顯示，沒有錯誤表示 redirect 成功
       if (result?.error) {
-        // 顯示詳細的錯誤訊息
         setError(`登入失敗：${result.error}`)
         console.error('Login error:', result.error)
+        setLoading(false)
       }
+      // 如果沒有錯誤，redirect 會自動跳轉，不需要設定 loading = false
     } catch (err: any) {
-      // 顯示詳細的錯誤訊息
-      const errorMessage = err?.message || '登入失敗，請稍後再試'
-      setError(errorMessage)
-      console.error('Login exception:', err)
-    } finally {
-      setLoading(false)
+      // 只捕獲真正的錯誤，不捕獲 NEXT_REDIRECT
+      if (err?.message !== 'NEXT_REDIRECT') {
+        const errorMessage = err?.message || '登入失敗，請稍後再試'
+        setError(errorMessage)
+        console.error('Login exception:', err)
+        setLoading(false)
+      }
+      // 如果是 NEXT_REDIRECT，讓它繼續拋出
+      else {
+        throw err
+      }
     }
   }
 
