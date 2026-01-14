@@ -65,6 +65,23 @@ export default function CourseDetailPage() {
     fetchProductBundles()
   }, [params.id])
 
+  const fetchProductBundles = async () => {
+    try {
+      const supabase = createClient()
+      
+      const { data, error } = await supabase
+        .from('product_bundles')
+        .select('*')
+        .eq('course_id', params.id)
+
+      if (error) throw error
+
+      setProductBundles(data || [])
+    } catch (error) {
+      console.error('Error fetching product bundles:', error)
+    }
+  }
+
   const fetchCourseDetail = async () => {
     try {
       const supabase = createClient()
