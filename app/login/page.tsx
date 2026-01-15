@@ -25,6 +25,30 @@ export default function LoginPage() {
     })
   }
 
+  // 快速登入功能：自動填入測試帳號並登入
+  const handleQuickLogin = (role: 'admin' | 'teacher' | 'store') => {
+    setError('')
+    
+    const credentials = {
+      admin: { email: 'admin@keiseipharm.com', password: 'admin123' },
+      teacher: { email: 'teacher@keiseipharm.com', password: 'teacher123' },
+      store: { email: 'store@keiseipharm.com', password: 'store123' }
+    }
+
+    const { email, password } = credentials[role]
+    
+    startTransition(async () => {
+      const formData = new FormData()
+      formData.append('email', email)
+      formData.append('password', password)
+      
+      const result = await login(formData)
+      if (result?.error) {
+        setError(`快速登入失敗：${result.error}`)
+      }
+    })
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
@@ -99,8 +123,9 @@ export default function LoginPage() {
           <div className="grid grid-cols-3 gap-3">
             {/* 管理者 */}
             <button
-              onClick={() => router.push('/admin')}
-              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 rounded-lg border border-purple-200 transition-all hover:shadow-md group"
+              onClick={() => handleQuickLogin('admin')}
+              disabled={isPending}
+              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 rounded-lg border border-purple-200 transition-all hover:shadow-md group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Shield className="w-6 h-6 text-white" />
@@ -108,10 +133,11 @@ export default function LoginPage() {
               <span className="text-sm font-semibold text-gray-700">管理者</span>
             </button>
 
-            {/* 店家（暫時導向管理者） */}
+            {/* 店家 */}
             <button
-              onClick={() => router.push('/admin')}
-              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 rounded-lg border border-blue-200 transition-all hover:shadow-md group"
+              onClick={() => handleQuickLogin('store')}
+              disabled={isPending}
+              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 rounded-lg border border-blue-200 transition-all hover:shadow-md group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Store className="w-6 h-6 text-white" />
@@ -121,8 +147,9 @@ export default function LoginPage() {
 
             {/* 授課老師 */}
             <button
-              onClick={() => router.push('/teacher')}
-              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 rounded-lg border border-amber-200 transition-all hover:shadow-md group"
+              onClick={() => handleQuickLogin('teacher')}
+              disabled={isPending}
+              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-amber-100 rounded-lg border border-amber-200 transition-all hover:shadow-md group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                 <GraduationCap className="w-6 h-6 text-white" />
@@ -130,7 +157,7 @@ export default function LoginPage() {
               <span className="text-sm font-semibold text-gray-700">授課老師</span>
             </button>
           </div>
-          <p className="text-xs text-gray-500 text-center mt-3">點擊按鈕直接進入對應功能畫面（無需登入）</p>
+          <p className="text-xs text-gray-500 text-center mt-3">點擊按鈕自動登入測試帳號並進入對應功能畫面</p>
         </div>
       </div>
     </div>

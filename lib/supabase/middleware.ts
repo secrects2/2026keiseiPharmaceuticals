@@ -8,14 +8,21 @@ const adminOnlyRoutes = ['/admin']
 const memberOnlyRoutes = ['/member']
 
 export async function updateSession(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, searchParams } = request.nextUrl
 
   // 1. 效能優化：跳過靜態資源和 API 認證路由
   if (pathname.startsWith('/_next') || pathname.startsWith('/api/auth')) {
     return NextResponse.next()
   }
 
-  // 2. 建立 Supabase 客戶端並更新 session
+  // 2. 快速進入模式：允許從登入頁直接進入（開發/測試用）
+  const quickAccess = searchParams.get('quick')
+  if (quickAccess === 'admin' || quickAccess === 'teacher') {
+    // 允許快速進入，不檢查認證
+    return NextResponse.next()
+  }
+
+  // 3. 建立 Supabase 客戶端並更新 session
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -41,7 +48,7 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // 3. 取得用戶資訊（含錯誤處理）
+  // 4. 取得用戶資訊（含錯誤處理）
   let user = null
   try {
     const { data: { user: authUser }, error } = await supabase.auth.getUser()
@@ -51,7 +58,7 @@ export async function updateSession(request: NextRequest) {
     console.error('[Middleware] Auth error:', error)
   }
 
-  // 4. 效能優化：公開路由跳過認證檢查
+  // 5. 效能優化：公開路由跳過認證檢查
   const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route))
   if (isPublicRoute) {
     // 如果已登入且訪問登入頁，根據角色重導向
@@ -75,7 +82,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
-  // 5. 路由保護：未登入用戶重導向到登入頁
+  // 6. 路由保護：未登入用戶重導向到登入頁
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
   if (isProtectedRoute && !user) {
     const redirectUrl = new URL('/login', request.url)
@@ -83,7 +90,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // 6. 角色權限檢查
+  // 7. 角色權限檢查
   if (user) {
     try {
       const { data: userData } = await supabase
@@ -119,7 +126,7 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // 7. API 路由保護
+  // 8. API 路由保護
   if (pathname.startsWith('/api') && !pathname.startsWith('/api/auth') && !user) {
     return new NextResponse(
       JSON.stringify({ error: 'Unauthorized' }),
@@ -127,7 +134,7 @@ export async function updateSession(request: NextRequest) {
     )
   }
 
-  // 8. 日誌記錄（開發環境）
+  // 9. 日誌記錄（開發環境）
   if (process.env.NODE_ENV === 'development') {
     console.log('[Middleware]', {
       path: pathname,
