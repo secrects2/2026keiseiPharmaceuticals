@@ -6,6 +6,8 @@ import { Search, Award, CheckCircle, Users } from 'lucide-react'
 
 interface Enrollment {
   id: number
+  user_id: number
+  course_id: number
   enrollment_date: string
   payment_amount: string
   government_coin_used: number
