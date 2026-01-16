@@ -96,7 +96,7 @@ export default function TeacherDashboard() {
 
       // 計算總營收（70% 分潤）
       const totalRevenue = enrollmentsData?.reduce((sum, e) => {
-        return sum + (parseFloat(e.payment_amount) * 0.7)
+        return sum + (parseFloat(e.payment_amount.toString()) * 0.7)
       }, 0) || 0
 
       // 本月報名數和營收
@@ -110,7 +110,7 @@ export default function TeacherDashboard() {
 
       const thisMonthRevenue = enrollmentsData?.filter(e => 
         new Date(e.enrollment_date) >= thisMonthStart
-      ).reduce((sum, e) => sum + (parseFloat(e.payment_amount) * 0.7), 0) || 0
+      ).reduce((sum, e) => sum + (parseFloat(e.payment_amount.toString()) * 0.7), 0) || 0
 
       setStats({
         totalCourses,

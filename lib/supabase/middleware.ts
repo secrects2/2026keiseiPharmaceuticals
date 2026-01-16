@@ -3,9 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 // 路由配置
 const publicRoutes = ['/', '/login', '/register', '/test-auth']
-const protectedRoutes = ['/admin', '/member']
+const protectedRoutes = ['/admin', '/member', '/teacher']
 const adminOnlyRoutes = ['/admin']
 const memberOnlyRoutes = ['/member']
+const teacherOnlyRoutes = ['/teacher']
 
 export async function updateSession(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
@@ -72,6 +73,8 @@ export async function updateSession(request: NextRequest) {
 
         if (userData?.role === 'admin') {
           return NextResponse.redirect(new URL('/admin', request.url))
+        } else if (userData?.role === 'teacher') {
+          return NextResponse.redirect(new URL('/teacher', request.url))
         } else if (userData?.role === 'user') {
           return NextResponse.redirect(new URL('/member', request.url))
         }
@@ -116,6 +119,25 @@ export async function updateSession(request: NextRequest) {
         // 如果是管理員訪問 member，重導向到管理頁面
         if (userData?.role === 'admin') {
           return NextResponse.redirect(new URL('/admin', request.url))
+        }
+        // 如果是老師訪問 member，重導向到老師頁面
+        if (userData?.role === 'teacher') {
+          return NextResponse.redirect(new URL('/teacher', request.url))
+        }
+        // 其他情況重導向到登入頁
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
+
+      // 檢查 teacher 路由
+      const isTeacherRoute = teacherOnlyRoutes.some(route => pathname.startsWith(route))
+      if (isTeacherRoute && userData?.role !== 'teacher') {
+        // 如果是管理員訪問 teacher，重導向到管理頁面
+        if (userData?.role === 'admin') {
+          return NextResponse.redirect(new URL('/admin', request.url))
+        }
+        // 如果是一般會員訪問 teacher，重導向到會員頁面
+        if (userData?.role === 'user') {
+          return NextResponse.redirect(new URL('/member', request.url))
         }
         // 其他情況重導向到登入頁
         return NextResponse.redirect(new URL('/login', request.url))
