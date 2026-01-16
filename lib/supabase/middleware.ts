@@ -16,14 +16,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 2. 快速進入模式：允許從登入頁直接進入（開發/測試用）
-  const quickAccess = searchParams.get('quick')
-  if (quickAccess === 'admin' || quickAccess === 'teacher') {
-    // 允許快速進入，不檢查認證
-    return NextResponse.next()
-  }
-
-  // 3. 建立 Supabase 客戶端並更新 session
+  // 2. 建立 Supabase 客戶端並更新 session
   let supabaseResponse = NextResponse.next({
     request,
   })
