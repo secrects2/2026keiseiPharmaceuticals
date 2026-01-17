@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { BookOpen, Users, DollarSign, Star, TrendingUp, Calendar } from 'lucide-react'
+import { BookOpen, Users, DollarSign, Star, TrendingUp, Calendar, LogOut } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface TeacherStats {
   totalCourses: number
@@ -42,6 +43,7 @@ export default function TeacherDashboard() {
     thisMonthRevenue: 0
   })
   const [recentEnrollments, setRecentEnrollments] = useState<RecentEnrollment[]>([])
+  const router = useRouter()
 
   useEffect(() => {
     fetchTeacherData()
@@ -167,10 +169,30 @@ export default function TeacherDashboard() {
     )
   }
 
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.push('/login')
+    } catch (error) {
+      console.error('登出失敗：', error)
+      alert('登出失敗，請稍後再試')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">老師儀表板</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">老師儀表板</h1>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            登出
+          </button>
+        </div>
 
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
