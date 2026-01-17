@@ -33,6 +33,8 @@ export async function login(formData: FormData) {
     redirect('/admin')
   } else if (userData?.role === 'teacher') {
     redirect('/teacher')
+  } else if (userData?.role === 'store') {
+    redirect('/store')
   } else {
     redirect('/member')
   }

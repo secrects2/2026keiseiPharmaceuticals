@@ -135,6 +135,17 @@ export async function updateSession(request: NextRequest) {
         // 其他情況重導向到登入頁
         return NextResponse.redirect(new URL('/login', request.url))
       }
+
+      // 檢查 store 路由
+      const isStoreRoute = storeOnlyRoutes.some(route => pathname.startsWith(route))
+      if (isStoreRoute && userData?.role !== 'store') {
+        // 如果是管理員訪問 store，重導向到管理頁面
+        if (userData?.role === 'admin') {
+          return NextResponse.redirect(new URL('/admin', request.url))
+        }
+        // 其他情況重導向到登入頁
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
     } catch (error) {
       console.error('[Middleware] Role check error:', error)
       return NextResponse.redirect(new URL('/login', request.url))
